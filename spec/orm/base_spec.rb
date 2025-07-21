@@ -71,4 +71,26 @@ RSpec.describe ORM::Base do
       expect(user.email).to eq("taro@example.com")
     end
   end
+
+  describe "Class.new with arributes" do
+    it "creates user instance with attribute hash" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.new(name: "Alice", email: "alice@example.com")
+
+      expect(user.name).to eq("Alice")
+      expect(user.email).to eq("alice@example.com")
+    end
+
+    it "creates post instance with attribute hash" do
+      ORM::Base.establish_connection(database: ":memory:")
+      Post.create_table
+
+      post = Post.new(title: "greet", detail: "I'm Alice, working at Google. Nice to meet you.")
+
+      expect(post.title).to eq("greet")
+      expect(post.detail).to eq("I'm Alice, working at Google. Nice to meet you.")
+    end
+  end
 end

@@ -5,6 +5,14 @@ module ORM
   class Base
     @@connection = nil
 
+    def initialize(attributes = {})
+      attributes.each do |key, value|
+        if respond_to?("#{key}=")
+          send("#{key}=", value)
+        end
+      end
+    end
+
     def self.establish_connection(config)
       @@connection = SQLite3::Database.new(config[:database])
     end
@@ -19,10 +27,10 @@ module ORM
     end
 
     def self.create_table
+      columns_sql = columns_definition.map { |col, type| "#{col} #{type}" }.join(", ")
       sql = "CREATE TABLE #{self.table_name} (
         id INTEGER PRIMARY KEY autoincrement,
-        name TEXT,
-        email TEXT
+        #{columns_sql}
       )"
       connection.execute(sql)
 
@@ -33,6 +41,10 @@ module ORM
       sql = "PRAGMA table_info(#{self.table_name});"
       table_info = connection.execute(sql)
       table_info.map { |ti| ti[1] }
+    end
+
+    def self.columns_definition
+      {}
     end
 
     private
