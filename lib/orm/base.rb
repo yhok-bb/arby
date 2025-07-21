@@ -78,28 +78,12 @@ module ORM
     def save
       begin
         if id.nil? # INSERT
-          columns = self.class.columns_definition.keys
-          values = columns.map { |col| send(col) }
-
-          columns_sql = columns.join(', ')
-          placeholders = (['?'] * columns.size).join(', ')
-          sql = "INSERT INTO #{self.class.table_name} (#{columns_sql})
-                VALUES(#{placeholders});"
-          self.class.connection.execute(sql, values)
-          self.id = self.class.connection.last_insert_row_id
+          insert_record
         else # UPDATE
-          columns = self.class.columns_definition.keys
-          set_clause = columns.map { |col| "#{col} = ?" }.join(', ')
-          values = columns.map { |col| send(col) }
-
-          sql = "UPDATE #{self.class.table_name}
-                 SET #{set_clause}
-                 WHERE #{self.class.table_name}.id = ?"
-          self.class.connection.execute(sql, values + [id])
+          update_record
         end
         true # 成功
-      rescue => e
-        puts "--------error: #{e}-----------"
+      rescue
         false # 失敗
       end
     end
@@ -126,6 +110,28 @@ module ORM
       column_names.each do |cn|
         attr_accessor cn.to_sym
       end
+    end
+
+    def insert_record
+      columns, values = build_columns_and_values
+      columns_sql = columns.join(', ')
+      placeholders = (['?'] * columns.size).join(', ')
+      sql = "INSERT INTO #{self.class.table_name} (#{columns_sql}) VALUES(#{placeholders});"
+      self.class.connection.execute(sql, values)
+      self.id = self.class.connection.last_insert_row_id
+    end
+
+    def update_record
+      columns, values = build_columns_and_values
+      set_clause = columns.map { |col| "#{col} = ?" }.join(', ')
+      sql = "UPDATE #{self.class.table_name} SET #{set_clause} WHERE id = ?"
+      self.class.connection.execute(sql, values + [id])
+    end
+
+    def build_columns_and_values
+      columns = self.class.columns_definition.keys
+      values = columns.map { |col| send(col) }
+      [columns, values]
     end
   end
 end
