@@ -13,6 +13,8 @@ module ORM
       end
     end
 
+    # class methods
+
     def self.establish_connection(config)
       @@connection = SQLite3::Database.new(config[:database])
     end
@@ -55,6 +57,7 @@ module ORM
         nil
       end
     end
+    # instance methods
 
     def save
       begin
