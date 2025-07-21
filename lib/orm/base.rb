@@ -111,6 +111,15 @@ module ORM
       save
     end
 
+    def destroy
+      return false if id.nil?
+      sql = "DELETE FROM #{self.class.table_name}
+             WHERE id = ?"
+      self.class.connection.execute(sql, id)
+      self.id = nil
+      true
+    end
+
     private
 
     def self.generate_attributes_accessors

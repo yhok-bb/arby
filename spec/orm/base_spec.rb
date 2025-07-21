@@ -163,6 +163,23 @@ RSpec.describe ORM::Base do
     end
   end
 
+  describe "delete instance" do
+    it "deletes record from database" do
+      user = User.create(name: "Alice")
+
+      user.destroy
+      expect(user.id).to be_nil
+    end
+
+    it "returns nil when record not found" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.find(999)
+      expect(user).to be_nil
+    end
+  end
+
   describe "find instance" do
     it "finds user by id" do
       ORM::Base.establish_connection(database: ":memory:")
