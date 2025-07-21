@@ -12,5 +12,10 @@ module ORM
     def self.connection
       @@connection
     end
+    
+    def self.table_name
+      klass = self.to_s.downcase
+      klass + "s"
+    end
   end
 end
