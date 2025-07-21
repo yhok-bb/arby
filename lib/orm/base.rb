@@ -47,11 +47,29 @@ module ORM
       {}
     end
 
+    def save
+      begin
+        columns = self.class.columns_definition.keys
+        values = columns.map { |col| send(col) }
+
+        columns_sql = columns.join(', ')
+        placeholders = (['?'] * columns.size).join(', ')
+        sql = "INSERT INTO #{self.class.table_name} (#{columns_sql})
+              VALUES(#{placeholders});"
+        self.class.connection.execute(sql, values)
+        self.id = self.class.connection.last_insert_row_id
+        true # 成功
+      rescue => e
+        puts "--------error: #{e}-----------"
+        false # 失敗
+      end
+    end
+
     private
 
     def self.generate_attributes_accessors
       column_names.each do |cn|
-        attr_accessor cn.to_sym unless cn == "id"
+        attr_accessor cn.to_sym
       end
     end
   end

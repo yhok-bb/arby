@@ -93,4 +93,25 @@ RSpec.describe ORM::Base do
       expect(post.detail).to eq("I'm Alice, working at Google. Nice to meet you.")
     end
   end
+
+  describe 'save instance' do
+    it "save user instance" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.new(name: "Taro", email: "taro@example.com")
+      res = user.save
+
+      expect(res).to be_truthy
+
+      # DBの中身を直接確認
+      result = ORM::Base.connection.execute(
+                 "SELECT id, name, email FROM users WHERE id = ?", [user.id]
+               )
+      row = result[0]
+      expect(row[0]).to eq(1)
+      expect(row[1]).to eq("Taro")
+      expect(row[2]).to eq("taro@example.com")
+    end
+  end
 end
