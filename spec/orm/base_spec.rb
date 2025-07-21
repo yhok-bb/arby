@@ -114,4 +114,24 @@ RSpec.describe ORM::Base do
       expect(row[2]).to eq("taro@example.com")
     end
   end
+
+  describe "create instance" do
+    it "create user instance" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.create(name: "Yoshida", email: "yoshida@example.com")
+
+      expect(user).to be_a(User)
+      expect(user.id).not_to be_nil
+      # DBの中身を直接確認
+      result = ORM::Base.connection.execute(
+                 "SELECT id, name, email FROM users WHERE id = ?", [user.id]
+               )
+      row = result[0]
+      expect(row[0]).to eq(1)
+      expect(row[1]).to eq("Yoshida")
+      expect(row[2]).to eq("yoshida@example.com")
+    end
+  end
 end

@@ -47,6 +47,15 @@ module ORM
       {}
     end
 
+    def self.create(attributes = {})
+      instance = new(attributes)
+      if instance.save
+        instance
+      else
+        nil
+      end
+    end
+
     def save
       begin
         columns = self.class.columns_definition.keys
