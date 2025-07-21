@@ -34,4 +34,19 @@ RSpec.describe ORM::Base do
       expect(Comment.table_name).to eq("comments")
     end
   end
+
+  describe ".create_table" do
+    it "creates table in database" do
+      ORM::Base.establish_connection(database: ":memory:")
+      user_class = Class.new(ORM::Base)
+      stub_const("User", user_class)
+
+      User.create_table
+
+      result = ORM::Base.connection.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+      )
+      expect(result).not_to be_empty
+    end
+  end
 end

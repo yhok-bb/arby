@@ -17,5 +17,14 @@ module ORM
       klass = self.to_s.downcase
       klass + "s"
     end
+
+    def self.create_table
+      sql = "CREATE TABLE #{self.table_name} (
+        id INTEGER PRIMARY KEY autoincrement,
+        name TEXT,
+        email TEXT
+      )"
+      connection.execute(sql)
+    end
   end
 end
