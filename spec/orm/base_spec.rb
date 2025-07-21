@@ -94,7 +94,7 @@ RSpec.describe ORM::Base do
     end
   end
 
-  describe 'save instance' do
+  describe "save instance" do
     it "save user instance" do
       ORM::Base.establish_connection(database: ":memory:")
       User.create_table
