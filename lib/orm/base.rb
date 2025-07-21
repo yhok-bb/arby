@@ -25,12 +25,22 @@ module ORM
         email TEXT
       )"
       connection.execute(sql)
+
+      generate_attributes_accessors
     end
 
     def self.column_names
       sql = "PRAGMA table_info(#{self.table_name});"
       table_info = connection.execute(sql)
       table_info.map { |ti| ti[1] }
+    end
+
+    private
+
+    def self.generate_attributes_accessors
+      column_names.each do |cn|
+        attr_accessor cn.to_sym unless cn == "id"
+      end
     end
   end
 end

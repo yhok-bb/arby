@@ -60,4 +60,29 @@ RSpec.describe ORM::Base do
       expect(User.column_names).to eq(["id", "name", "email"])
     end
   end
+
+  describe ".generate_attributes_accessors" do
+    it "generate attr_accessor" do
+      ORM::Base.establish_connection(database: ":memory:")
+      user_class = Class.new(ORM::Base)
+      stub_const("User", user_class)
+
+      User.create_table
+      expect(User.instance_methods).to include(:name, :name=, :email, :email=)
+    end
+
+    it "allows setting and getting attribute values" do
+      ORM::Base.establish_connection(database: ":memory:")
+      user_class = Class.new(ORM::Base)
+      stub_const("User", user_class)
+
+      User.create_table
+      user = User.new
+      user.name = "Taro"
+      user.email = "taro@example.com"
+
+      expect(user.name).to eq("Taro")
+      expect(user.email).to eq("taro@example.com")
+    end
+  end
 end
