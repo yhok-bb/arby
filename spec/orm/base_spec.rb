@@ -49,4 +49,15 @@ RSpec.describe ORM::Base do
       expect(result).not_to be_empty
     end
   end
+
+  describe ".column_names" do
+    it "select column names" do
+      ORM::Base.establish_connection(database: ":memory:")
+      user_class = Class.new(ORM::Base)
+      stub_const("User", user_class)
+
+      User.create_table
+      expect(User.column_names).to eq(["id", "name", "email"])
+    end
+  end
 end

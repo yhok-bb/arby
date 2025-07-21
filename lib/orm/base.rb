@@ -26,5 +26,11 @@ module ORM
       )"
       connection.execute(sql)
     end
+
+    def self.column_names
+      sql = "PRAGMA table_info(#{self.table_name});"
+      table_info = connection.execute(sql)
+      table_info.map { |ti| ti[1] }
+    end
   end
 end
