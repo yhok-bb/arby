@@ -199,5 +199,12 @@ RSpec.describe ORM::Base do
       user = User.find(999)
       expect(user).to be_nil
     end
+
+    it "returns ArgumentError when record nil" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      expect { User.find(nil) }.to raise_error(ArgumentError, "ID cannot be nil")
+    end
   end
 end

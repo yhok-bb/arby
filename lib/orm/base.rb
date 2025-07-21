@@ -59,7 +59,7 @@ module ORM
     end
 
     def self.find(id)
-      raise "please specify the id as an argument" unless id
+      raise ArgumentError, "ID cannot be nil" unless id
 
       sql = "SELECT *
              FROM #{table_name}
