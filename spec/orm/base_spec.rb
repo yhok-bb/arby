@@ -134,4 +134,25 @@ RSpec.describe ORM::Base do
       expect(row[2]).to eq("yoshida@example.com")
     end
   end
+
+  describe "find instance" do
+    it "finds user by id" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.create(name: "Yoshida", email: "yoshida@example.com")
+
+      find_user = User.find(user.id)
+      expect(find_user.name).to eq("Yoshida")
+      expect(find_user.email).to eq("yoshida@example.com")
+    end
+
+    it "returns nil when record not found" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.find(999)
+      expect(user).to be_nil
+    end
+  end
 end

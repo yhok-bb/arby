@@ -57,6 +57,22 @@ module ORM
         nil
       end
     end
+
+    def self.find(id)
+      raise "please specify the id as an argument" unless id
+
+      sql = "SELECT *
+             FROM #{table_name}
+             WHERE #{table_name}.id = ?"
+      record = self.connection.execute(sql, id)
+      record = record[0]
+      
+      return nil if record.nil?
+      
+      attributes = Hash[column_names.zip(record)]
+      new(attributes)
+    end
+
     # instance methods
 
     def save
