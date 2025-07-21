@@ -68,7 +68,7 @@ module ORM
       record = record[0]
       
       return nil if record.nil?
-      
+
       attributes = Hash[column_names.zip(record)]
       new(attributes)
     end
@@ -77,20 +77,38 @@ module ORM
 
     def save
       begin
-        columns = self.class.columns_definition.keys
-        values = columns.map { |col| send(col) }
+        if id.nil? # INSERT
+          columns = self.class.columns_definition.keys
+          values = columns.map { |col| send(col) }
 
-        columns_sql = columns.join(', ')
-        placeholders = (['?'] * columns.size).join(', ')
-        sql = "INSERT INTO #{self.class.table_name} (#{columns_sql})
-              VALUES(#{placeholders});"
-        self.class.connection.execute(sql, values)
-        self.id = self.class.connection.last_insert_row_id
+          columns_sql = columns.join(', ')
+          placeholders = (['?'] * columns.size).join(', ')
+          sql = "INSERT INTO #{self.class.table_name} (#{columns_sql})
+                VALUES(#{placeholders});"
+          self.class.connection.execute(sql, values)
+          self.id = self.class.connection.last_insert_row_id
+        else # UPDATE
+          columns = self.class.columns_definition.keys
+          set_clause = columns.map { |col| "#{col} = ?" }.join(', ')
+          values = columns.map { |col| send(col) }
+
+          sql = "UPDATE #{self.class.table_name}
+                 SET #{set_clause}
+                 WHERE #{self.class.table_name}.id = ?"
+          self.class.connection.execute(sql, values + [id])
+        end
         true # 成功
       rescue => e
         puts "--------error: #{e}-----------"
         false # 失敗
       end
+    end
+
+    def update(attributes = {})
+      attributes.each do |key, value|
+        send("#{key}=", value) if respond_to?("#{key}=")
+      end
+      save
     end
 
     private

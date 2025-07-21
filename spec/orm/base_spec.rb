@@ -113,6 +113,20 @@ RSpec.describe ORM::Base do
       expect(row[1]).to eq("Taro")
       expect(row[2]).to eq("taro@example.com")
     end
+
+    it "updates existing record when save is called" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.create(name: "Alice", email: "alice@example.com")
+
+      user.name = "Bob"
+      user.save
+
+      updated_user = User.find(user.id)
+      expect(updated_user.name).to eq("Bob")
+      expect(updated_user.email).to eq("alice@example.com")
+    end
   end
 
   describe "create instance" do
@@ -132,6 +146,20 @@ RSpec.describe ORM::Base do
       expect(row[0]).to eq(1)
       expect(row[1]).to eq("Yoshida")
       expect(row[2]).to eq("yoshida@example.com")
+    end
+  end
+
+  describe "update instance" do
+    it "updates existing record when save is called" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      user = User.create(name: "Alice", email: "alice@example.com")
+      user.update(name: "Bob")
+
+      updated_user = User.find(user.id)
+      expect(updated_user.name).to eq("Bob")
+      expect(updated_user.email).to eq("alice@example.com")
     end
   end
 
