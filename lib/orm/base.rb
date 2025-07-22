@@ -73,6 +73,10 @@ module ORM
       new(attributes)
     end
 
+    def self.where(conditions)
+      QueryBuilder.new(self).where(conditions)
+    end
+
     # instance methods
 
     def save

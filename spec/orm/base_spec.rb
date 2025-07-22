@@ -3,6 +3,7 @@ require_relative '../../lib/orm/base'
 require_relative '../../app/models/user'
 require_relative '../../app/models/post'
 require_relative '../../app/models/comment'
+require_relative '../../lib/orm/query_builder'
 
 RSpec.describe ORM::Base do
   describe "definition ORM::Base" do
@@ -205,6 +206,16 @@ RSpec.describe ORM::Base do
       User.create_table
 
       expect { User.find(nil) }.to raise_error(ArgumentError, "ID cannot be nil")
+    end
+  end
+
+  describe ".where" do
+    it "returns QueryBuilder instance" do
+      ORM::Base.establish_connection(database: ":memory:")
+      User.create_table
+
+      result = User.where(name: "Alice")
+      expect(result).to be_instance_of(ORM::QueryBuilder)
     end
   end
 end
