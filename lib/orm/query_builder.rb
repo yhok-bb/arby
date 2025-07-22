@@ -6,5 +6,10 @@ module ORM
       @klass = klass
       @conditions = conditions
     end
+
+    def where(attributes = {})
+      conditions = @conditions + [attributes]
+      self.class.new(@klass, conditions)
+    end
   end
 end
