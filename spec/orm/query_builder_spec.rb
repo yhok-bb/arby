@@ -27,4 +27,22 @@ RSpec.describe ORM::QueryBuilder do
       expect(result.conditions).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
     end
   end
+
+  describe "#to_sql" do
+    it "constructing a query string when conditions apply" do
+      User.create(name: "Alice", email: "alice@example.com")
+      User.create(name: "Tom", email: "tom@example.com")
+      builder = ORM::QueryBuilder.new(User)
+      result = builder.where(name: "Alice").where(email: "alice@example.com")
+
+      expect(result.to_sql).to eq("SELECT * FROM users WHERE name = 'Alice' AND email = 'alice@example.com'")
+    end
+
+    it "constructing a query string when conditions none" do
+      User.create(name: "Alice", email: "alice@example.com")
+      User.create(name: "Tom", email: "tom@example.com")
+      builder = ORM::QueryBuilder.new(User)
+      expect(builder.to_sql).to eq("SELECT * FROM users")
+    end
+  end
 end
