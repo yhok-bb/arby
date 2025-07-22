@@ -50,7 +50,7 @@ RSpec.describe ORM::Base do
     it "select column names" do
       ORM::Base.establish_connection(database: ":memory:")
       User.create_table
-      expect(User.column_names).to eq(["id", "name", "email"])
+      expect(User.column_names).to eq(["id", "name", "email", "age"])
     end
   end
 
