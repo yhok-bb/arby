@@ -67,5 +67,13 @@ RSpec.describe ORM::QueryBuilder do
       results = ORM::QueryBuilder.new(User).where(name: "Alice").execute
       expect(results.size).to eq(2)
     end
+
+    it "returns database not connection error" do
+      ORM::Base.establish_connection(database: ":none:")
+
+      expect {
+        ORM::QueryBuilder.new(User).execute
+    }.to raise_error(SQLite3::Exception)
+    end
   end
 end
