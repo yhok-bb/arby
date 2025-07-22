@@ -45,4 +45,27 @@ RSpec.describe ORM::QueryBuilder do
       expect(builder.to_sql).to eq("SELECT * FROM users")
     end
   end
+
+  describe "#execute" do
+    it "returns single records when multiple matches exist" do
+      User.create(name: "Alice", email: "alice@example.com")
+      User.create(name: "Tom", email: "tom@example.com")
+      builder = ORM::QueryBuilder.new(User)
+      results = builder.where(name: "Alice").execute
+
+      expect(results).to be_an(Array)
+      expect(results.size).to eq(1)
+      expect(results.first).to be_instance_of(User)
+      expect(results.first.name).to eq("Alice")
+      expect(results.first.email).to eq("alice@example.com")
+    end
+
+    it "returns multiple records when multiple matches exist" do
+      User.create(name: "Alice", email: "alice1@example.com")
+      User.create(name: "Alice", email: "alice2@example.com")
+
+      results = ORM::QueryBuilder.new(User).where(name: "Alice").execute
+      expect(results.size).to eq(2)
+    end
+  end
 end

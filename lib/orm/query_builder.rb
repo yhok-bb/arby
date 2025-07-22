@@ -21,5 +21,11 @@ module ORM
 
       "SELECT * FROM #{@klass.table_name} WHERE #{where_query}"
     end
+
+    def execute
+      record = klass.connection.execute(to_sql)
+      attributes = record.map { |r| Hash[klass.column_names.zip(r)] }
+      attributes.map { |attr| klass.new(attr) }
+    end
   end
 end
