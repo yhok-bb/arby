@@ -82,7 +82,7 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "returns database not connection error" do
-      ORM::Base.establish_connection(database: ":none:")
+      ORM::Base.establish_connection(database: nil)
 
       expect {
         ORM::QueryBuilder.new(User).execute
