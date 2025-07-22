@@ -13,10 +13,16 @@ module ORM
     end
 
     def to_sql
-        return "SELECT * FROM #{@klass.table_name}" if @conditions.empty?
+      return "SELECT * FROM #{@klass.table_name}" if @conditions.empty?
 
       where_query = @conditions.map do |h|
-        h.map { |k,v| "#{k} = '#{v}'" } # TODO プレースホルダの使用
+        h.map do |k,v|
+          if v.is_a?(Range)
+            "#{k} BETWEEN #{v.begin} and #{v.end}"
+          else
+            "#{k} = '#{v}'" # TODO プレースホルダの使用
+          end
+        end
       end.flatten.join(' AND ')
 
       "SELECT * FROM #{@klass.table_name} WHERE #{where_query}"

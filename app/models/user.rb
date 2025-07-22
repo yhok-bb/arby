@@ -2,6 +2,6 @@ require_relative '../../lib/orm/base'
 
 class User < ORM::Base
   def self.columns_definition
-    { name: 'TEXT', email: 'TEXT' }
+    { name: 'TEXT', email: 'TEXT', age: 'INTEGER' }
   end
 end

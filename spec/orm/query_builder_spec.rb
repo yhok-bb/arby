@@ -26,6 +26,19 @@ RSpec.describe ORM::QueryBuilder do
       expect(builder).not_to equal(result)
       expect(result.conditions).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
     end
+
+    it "when range specification" do
+      User.create(name: "Alice", age: 15)
+      User.create(name: "Taro", age: 25)
+      User.create(name: "Yoshida", age: 35)
+
+      users = User.where(age: 20..30)
+      expect(users.to_sql).to eq("SELECT * FROM users WHERE age BETWEEN 20 and 30")
+
+      results = users.execute
+      expect(results.size).to eq(1)
+      expect(results.first.name).to eq("Taro")
+    end
   end
 
   describe "#to_sql" do
