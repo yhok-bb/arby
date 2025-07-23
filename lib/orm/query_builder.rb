@@ -29,9 +29,14 @@ module ORM
     end
 
     def to_sql
-      return select_sql if @query_state[:conditions].empty?
-
-      "#{select_sql} WHERE #{build_where_clauses}"
+      [
+        build_select_clause,
+        build_from_clause,
+        build_where_clause,
+        # build_order_clause,
+        # build_limit_clause,
+        # build_offset_clause,
+      ].reject(&:empty?).join(' ')
     end
 
     def execute
@@ -41,15 +46,24 @@ module ORM
 
     private
 
-    def select_sql
-      attr = @query_state[:select_attributes].empty? ?  "*" : @query_state[:select_attributes].join(', ') 
-      "SELECT #{attr} FROM #{@klass.table_name}"
+
+    def build_select_clause
+      select = @query_state[:select_attributes].empty? ?  "*" : @query_state[:select_attributes].join(', ') 
+      "SELECT #{select}"
     end
 
-    def build_where_clauses
-      @query_state[:conditions].flat_map do |h|
-        h.map { |k,v| build_sql_placeholder(k, v) }
-      end.join(' AND ')
+    def build_from_clause
+      "FROM #{@klass.table_name}"
+    end
+    
+    def build_where_clause
+      return "" if @query_state[:conditions].empty?
+
+      conditions = @query_state[:conditions].flat_map do |h|
+                     h.map { |k,v| build_sql_placeholder(k, v) }
+                   end.join(' AND ')
+
+      "WHERE #{conditions}"
     end
 
     def normalize_bind_values(values)
