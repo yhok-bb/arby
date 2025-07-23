@@ -79,9 +79,17 @@ module ORM
     end
 
     def convert_to_instances(raw_records)
+      return raw_records.flatten.first if raw_records.flatten.size == 1 && aggregation_result?(raw_records.flatten)
+
       raw_records.map { |raw_record|
         build_instance_from_record(raw_record)
       }
+    end
+
+    def aggregation_result?(res)
+      @query_state[:select_attributes].any? { |attr|
+        attr.to_s.match?(/\A\w+\(.+\)\z/) # COUNT(*) などにマッチする
+      } && (res.first.is_a?(Numeric) || res.first.is_a?(Float))
     end
 
     def build_instance_from_record(raw_record)

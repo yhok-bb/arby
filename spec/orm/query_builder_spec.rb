@@ -69,6 +69,45 @@ RSpec.describe ORM::QueryBuilder do
 
       expect(result.to_sql).to eq("SELECT name, email FROM users WHERE name = ?")
     end
+
+    it "returns count of records" do
+      User.create(name: "Alice")
+      User.create(name: "Bob")
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.select("COUNT(*)").execute
+      expect(res).to eq(2)
+    end
+
+    it "returns name count of records" do
+      User.create(name: "Alice")
+      User.create(name: "Bob")
+      User.create(age: 15)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.select("COUNT(name)").execute
+      expect(res).to eq(2)
+    end
+
+    it "returns sum age of records" do
+      User.create(name: "Alice")
+      User.create(age: 30)
+      User.create(age: 15)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.select("SUM(age)").execute
+      expect(res).to eq(45)
+    end
+
+    it "returns avg age of records" do
+      User.create(name: 25)
+      User.create(age: 30)
+      User.create(age: 15)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.select("AVG(age)").execute
+      expect(res).to eq(22.5)
+    end
   end
 
   describe "#to_sql" do
@@ -108,7 +147,7 @@ RSpec.describe ORM::QueryBuilder do
       User.create(name: "Tom", email: "tom@example.com")
       builder = ORM::QueryBuilder.new(User)
       results = builder.where(name: "' OR 1=1 --").where(age: 15).execute
-      
+
       expect(results).to be_an(Array)
       expect(results.size).to eq(0)
     end
