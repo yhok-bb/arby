@@ -24,7 +24,7 @@ RSpec.describe ORM::QueryBuilder do
 
       expect(result).to be_instance_of(ORM::QueryBuilder)
       expect(builder).not_to equal(result)
-      expect(result.conditions).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
+      expect(result.query_state[:conditions]).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
     end
 
     it "when range specification" do
@@ -38,6 +38,36 @@ RSpec.describe ORM::QueryBuilder do
       results = users.execute
       expect(results.size).to eq(1)
       expect(results.first.name).to eq("Taro")
+    end
+  end
+
+  describe "#select" do
+    it "when single select" do
+      User.create(name: "Alice", email: "alice@example.com", age: 15)
+      User.create(name: "Tom", email: "tom@example.com", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      result = builder.select(:name)
+
+      expect(result.to_sql).to eq("SELECT name FROM users")
+    end
+    it "when multiple select" do
+      User.create(name: "Alice", email: "alice@example.com", age: 15)
+      User.create(name: "Tom", email: "tom@example.com", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      result = builder.select(:name, :email)
+
+      expect(result.to_sql).to eq("SELECT name, email FROM users")
+    end
+    it "when select and method chain" do
+      User.create(name: "Alice", email: "alice@example.com", age: 15)
+      User.create(name: "Tom", email: "tom@example.com", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      result = builder.select(:name, :email).where(name: "Alice")
+
+      expect(result.to_sql).to eq("SELECT name, email FROM users WHERE name = ?")
     end
   end
 
@@ -78,7 +108,7 @@ RSpec.describe ORM::QueryBuilder do
       User.create(name: "Tom", email: "tom@example.com")
       builder = ORM::QueryBuilder.new(User)
       results = builder.where(name: "' OR 1=1 --").where(age: 15).execute
-
+      
       expect(results).to be_an(Array)
       expect(results.size).to eq(0)
     end
