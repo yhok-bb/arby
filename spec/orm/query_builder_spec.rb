@@ -110,6 +110,53 @@ RSpec.describe ORM::QueryBuilder do
     end
   end
 
+  describe "#order" do
+    it "returns age asc of records" do
+      User.create(age: 25)
+      User.create(age: 15)
+      User.create(age: 20)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.order(:age).execute
+
+      expect(res[0].age).to eq(15)
+      expect(res[1].age).to eq(20)
+      expect(res[2].age).to eq(25)
+    end
+
+    it "returns age desc of records" do
+      User.create(age: 15)
+      User.create(age: 20)
+      User.create(age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.order(age: :desc).execute
+      
+      expect(res[0].age).to eq(25)
+      expect(res[1].age).to eq(20)
+      expect(res[2].age).to eq(15)
+    end
+
+    it "returns age desc and name desc of records" do
+      User.create(name: "Alice", age: 15)
+      User.create(name: "Blice", age: 20)
+      User.create(name: "Clice", age: 25)
+      User.create(name: "Dlice", age: 15)
+      User.create(name: "Elice", age: 20)
+      User.create(name: "Flice", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.order(age: :desc, name: :desc).execute
+      
+      expect(res[0].name).to eq("Flice")
+      expect(res[1].name).to eq("Clice")
+      expect(res[2].name).to eq("Elice")
+      expect(res[3].name).to eq("Blice")
+      expect(res[4].name).to eq("Dlice")
+      expect(res[5].name).to eq("Alice")
+    end
+  end
+
   describe "#to_sql" do
     it "constructing a query string when conditions apply" do
       User.create(name: "Alice", email: "alice@example.com")

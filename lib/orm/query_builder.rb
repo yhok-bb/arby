@@ -28,12 +28,19 @@ module ORM
       self.class.new(@klass, new_query_state)
     end
 
+    def order(*attributes)
+      new_query_state = @query_state.merge(
+        order_clauses: @query_state[:order_clauses] + attributes
+      )
+      self.class.new(@klass, new_query_state)
+    end
+
     def to_sql
       [
         build_select_clause,
         build_from_clause,
         build_where_clause,
-        # build_order_clause,
+        build_order_clause,
         # build_limit_clause,
         # build_offset_clause,
       ].reject(&:empty?).join(' ')
@@ -64,6 +71,15 @@ module ORM
                    end.join(' AND ')
 
       "WHERE #{conditions}"
+    end
+
+    def build_order_clause
+      return "" if @query_state[:order_clauses].empty?
+
+      value = @query_state[:order_clauses].map do |h|
+                h.is_a?(Symbol) ? h.to_s : h.map { |k,v| "#{k.to_s} #{v.to_s.upcase}" }.join(', ')
+              end.join
+      "ORDER BY #{value}"
     end
 
     def normalize_bind_values(values)
