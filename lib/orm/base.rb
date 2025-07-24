@@ -81,6 +81,14 @@ module ORM
       QueryBuilder.new(self).join(association)
     end
 
+    def self.select(*attributes)
+      QueryBuilder.new(self).select(*attributes)
+    end
+
+    def self.order(*attributes)
+      QueryBuilder.new(self).order(*attributes)
+    end
+
     # instance methods
 
     def save
