@@ -157,6 +157,35 @@ RSpec.describe ORM::QueryBuilder do
     end
   end
 
+  describe "#limit, #offset" do
+    it "returns limit users of records" do
+      User.create(name: "Alice", age: 15)
+      User.create(name: "Blice", age: 20)
+      User.create(name: "Clice", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.limit(2).execute
+
+      expect(res.size).to eq(2)
+    end
+
+    it "returns offset users of records" do
+      User.create(name: "Alice", age: 15)
+      User.create(name: "Blice", age: 20)
+      User.create(name: "Clice", age: 25)
+      User.create(name: "Dlice", age: 15)
+      User.create(name: "Elice", age: 20)
+      User.create(name: "Flice", age: 25)
+
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.limit(2).offset(2).execute
+
+      expect(res.size).to eq(2)
+      expect(res.first.name).to eq("Clice")
+      expect(res.last.name).to eq("Dlice")
+    end
+  end
+
   describe "#to_sql" do
     it "constructing a query string when conditions apply" do
       User.create(name: "Alice", email: "alice@example.com")

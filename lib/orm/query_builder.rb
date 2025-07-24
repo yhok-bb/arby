@@ -9,7 +9,8 @@ module ORM
         bind_values: [],
         select_attributes: [],
         order_clauses: [],
-        limit_value: nil
+        limit_value: nil,
+        offset_value: nil,
       }.merge(query_state)
     end
 
@@ -35,14 +36,24 @@ module ORM
       self.class.new(@klass, new_query_state)
     end
 
+    def limit(num)
+      new_query_state = @query_state.merge(limit_value: num)
+      self.class.new(@klass, new_query_state)
+    end
+
+    def offset(num)
+      new_query_state = @query_state.merge(offset_value: num)
+      self.class.new(@klass, new_query_state)
+    end
+
     def to_sql
       [
         build_select_clause,
         build_from_clause,
         build_where_clause,
         build_order_clause,
-        # build_limit_clause,
-        # build_offset_clause,
+        build_limit_clause,
+        build_offset_clause,
       ].reject(&:empty?).join(' ')
     end
 
@@ -52,7 +63,6 @@ module ORM
     end
 
     private
-
 
     def build_select_clause
       select = @query_state[:select_attributes].empty? ?  "*" : @query_state[:select_attributes].join(', ') 
@@ -82,6 +92,18 @@ module ORM
       "ORDER BY #{value}"
     end
 
+    def build_limit_clause
+      return "" unless @query_state[:limit_value]
+
+      "LIMIT #{@query_state[:limit_value]}"
+    end
+
+    def build_offset_clause
+      return "" unless @query_state[:limit_value] && @query_state[:offset_value]
+
+      "OFFSET #{@query_state[:offset_value]}"
+    end
+
     def normalize_bind_values(values)
       if values.first.is_a?(Range)
         [values.first.begin, values.first.end]
@@ -95,6 +117,7 @@ module ORM
     end
 
     def convert_to_instances(raw_records)
+      # 集約関数ならreturn
       return raw_records.flatten.first if raw_records.flatten.size == 1 && aggregation_result?(raw_records.flatten)
 
       raw_records.map { |raw_record|
