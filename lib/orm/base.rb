@@ -77,6 +77,10 @@ module ORM
       QueryBuilder.new(self).where(conditions)
     end
 
+    def self.join(association)
+      QueryBuilder.new(self).join(association)
+    end
+
     # instance methods
 
     def save

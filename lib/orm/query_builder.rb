@@ -11,6 +11,7 @@ module ORM
         order_clauses: [],
         limit_value: nil,
         offset_value: nil,
+        join_clause: [],
       }.merge(query_state)
     end
 
@@ -45,11 +46,17 @@ module ORM
       new_query_state = @query_state.merge(offset_value: num)
       self.class.new(@klass, new_query_state)
     end
+    
+    def join(association)
+      new_query_state = @query_state.merge(join_clause: association)
+      self.class.new(@klass, new_query_state)
+    end
 
     def to_sql
       [
         build_select_clause,
         build_from_clause,
+        build_join_clause,
         build_where_clause,
         build_order_clause,
         build_limit_clause,
@@ -81,6 +88,17 @@ module ORM
                    end.join(' AND ')
 
       "WHERE #{conditions}"
+    end
+
+    def build_join_clause
+      return "" if @query_state[:join_clause].empty?
+
+      table_name = @query_state[:join_clause].to_s
+      model_name = table_name.chomp("s").capitalize
+      @associate_model = Object.const_get(model_name)
+
+      foreign_key = "#{@klass.name.downcase}_id"
+      "INNER JOIN #{table_name} ON #{@klass.table_name}.id = #{table_name}.#{foreign_key}"
     end
 
     def build_order_clause
@@ -117,11 +135,35 @@ module ORM
     end
 
     def convert_to_instances(raw_records)
+      return join_result(raw_records) if has_join?
+
       # 集約関数ならreturn
       return raw_records.flatten.first if raw_records.flatten.size == 1 && aggregation_result?(raw_records.flatten)
 
       raw_records.map { |raw_record|
         build_instance_from_record(raw_record)
+      }
+    end
+
+    def has_join?
+      !@query_state[:join_clause].empty?
+    end
+
+    def join_result(raw_records)
+      records = raw_records.map(&:dup).flatten
+
+      klass_columns     = @klass.column_names
+      associate_columns = @associate_model.column_names
+
+      klass_values     = records[0...klass_columns.size]
+      associate_values = records[klass_columns.size...klass_columns.size + associate_columns.size]
+
+      klass_instance     = @klass.new(Hash[klass_columns.zip(klass_values)])
+      associate_instance = @associate_model.new(Hash[associate_columns.zip(associate_values)])
+
+      {
+        @klass.name.downcase.to_sym => klass_instance,
+        @associate_model.name.downcase.to_sym => associate_instance
       }
     end
 

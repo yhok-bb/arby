@@ -1,11 +1,13 @@
 require_relative '../../lib/orm/base'
 require_relative '../../lib/orm/query_builder'
 require_relative '../../app/models/user'
+require_relative '../../app/models/post'
 
 RSpec.describe ORM::QueryBuilder do
   before(:each) do
     ORM::Base.establish_connection(database: ":memory:")
     User.create_table
+    Post.create_table
   end
 
   describe "#initialize" do
@@ -107,6 +109,90 @@ RSpec.describe ORM::QueryBuilder do
       builder = ORM::QueryBuilder.new(User)
       res = builder.select("AVG(age)").execute
       expect(res).to eq(22.5)
+    end
+  end
+
+   describe "#join" do
+    it "joins with posts table" do
+      builder = ORM::QueryBuilder.new(User)
+      res = builder.join(:posts).to_sql
+      expect(res).to eq("SELECT * FROM users INNER JOIN posts ON users.id = posts.user_id")
+
+      user = User.create(name: "Alice", age: 15)
+      Post.create(user_id: user.id, title: "Hello", detail: "nice to meet you")
+      res = User.join(:posts).execute
+
+      expect(res[:user].id).to eq(1)
+      expect(res[:user].age).to eq(15)
+      expect(res[:user].email).to eq(nil)
+      expect(res[:user].name).to eq("Alice")
+      expect(res[:post].id).to eq(1)
+      expect(res[:post].user_id).to eq(1)
+      expect(res[:post].title).to eq("Hello")
+      expect(res[:post].detail).to eq("nice to meet you")
+    end
+
+    it "joins with where condition" do
+      user1 = User.create(name: "Alice", age: 25)
+      user2 = User.create(name: "Bob", age: 30)
+      
+      Post.create(user_id: user1.id, title: "Alice's Post", detail: "First post")
+      Post.create(user_id: user2.id, title: "Bob's Post", detail: "Second post")
+
+      res = User.where(name: "Alice").join(:posts).execute
+
+      expect(res[:user].name).to eq("Alice")
+      expect(res[:post].title).to eq("Alice's Post")
+    end
+
+    it "joins with order and limit" do
+      user1 = User.create(name: "Alice", age: 25)
+      user2 = User.create(name: "Bob", age: 30)
+      user3 = User.create(name: "Charlie", age: 35)
+      
+      Post.create(user_id: user1.id, title: "Post A", detail: "Detail A")
+      Post.create(user_id: user2.id, title: "Post B", detail: "Detail B")
+      Post.create(user_id: user3.id, title: "Post C", detail: "Detail C")
+
+      sql = User.join(:posts).order(:age).limit(2).to_sql
+      expect(sql).to eq("SELECT * FROM users INNER JOIN posts ON users.id = posts.user_id ORDER BY age LIMIT 2")
+    end
+
+    it "returns correct instance types" do
+      user = User.create(name: "Alice", age: 25)
+      Post.create(user_id: user.id, title: "Test Post", detail: "Test Detail")
+
+      res = User.join(:posts).execute
+
+      expect(res[:user]).to be_instance_of(User)
+      expect(res[:post]).to be_instance_of(Post)
+      expect(res[:user]).to respond_to(:name)
+      expect(res[:post]).to respond_to(:title)
+    end
+
+    it "handles join with select" do
+      user = User.create(name: "Alice", age: 25, email: "alice@example.com")
+      Post.create(user_id: user.id, title: "Selected Post", detail: "Selected Detail")
+
+      sql = User.select(:name, :age).join(:posts).to_sql
+      expect(sql).to eq("SELECT name, age FROM users INNER JOIN posts ON users.id = posts.user_id")
+    end
+
+    it "handles multiple users with posts correctly" do
+      user1 = User.create(name: "Alice", age: 25)
+      user2 = User.create(name: "Bob", age: 30)
+      
+      Post.create(user_id: user1.id, title: "Alice Post 1", detail: "Detail 1")
+      Post.create(user_id: user1.id, title: "Alice Post 2", detail: "Detail 2")
+      Post.create(user_id: user2.id, title: "Bob Post 1", detail: "Detail 3")
+
+      # 最初のマッチした組み合わせを返す
+      res = User.join(:posts).execute
+      
+      expect(res[:user]).to be_instance_of(User)
+      expect(res[:post]).to be_instance_of(Post)
+      expect(res[:user].id).to eq(1)  # Alice
+      expect(res[:post].user_id).to eq(1)
     end
   end
 
