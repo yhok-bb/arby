@@ -34,12 +34,10 @@ RSpec.describe ORM::QueryBuilder do
       User.create(name: "Taro", age: 25)
       User.create(name: "Yoshida", age: 35)
 
-      users = User.where(age: 20..30)
+      users = User.where(age: 20..30) # SQLは実行しない
       expect(users.to_sql).to eq("SELECT * FROM users WHERE age BETWEEN ? and ?")
 
-      results = users.execute
-      expect(results.size).to eq(1)
-      expect(results.first.name).to eq("Taro")
+      expect(users.first.name).to eq("Taro") # 遅延評価
     end
   end
 

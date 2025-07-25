@@ -1,5 +1,7 @@
 module ORM
   class QueryBuilder
+    include Enumerable
+
     attr_reader :klass, :query_state
 
     def initialize(klass, query_state = {})
@@ -62,6 +64,10 @@ module ORM
         build_limit_clause,
         build_offset_clause,
       ].reject(&:empty?).join(' ')
+    end
+
+    def each(&block)
+      execute.each(&block)
     end
 
     def execute
