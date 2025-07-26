@@ -4,17 +4,21 @@ module ORM
 
     attr_reader :klass, :query_state
 
+    QUERY_STATE = {
+      conditions: [],
+      bind_values: [],
+      select_attributes: [],
+      order_clauses: [],
+      limit_value: nil,
+      offset_value: nil,
+      join_clause: [],
+    }.freeze
+
+    class InvalidQueryError < StandardError; end
+
     def initialize(klass, query_state = {})
       @klass = klass
-      @query_state = {
-        conditions: [],
-        bind_values: [],
-        select_attributes: [],
-        order_clauses: [],
-        limit_value: nil,
-        offset_value: nil,
-        join_clause: [],
-    class InvalidQueryError < StandardError; end
+      @query_state = QUERY_STATE.merge(query_state)
       @loaded = false
       @records = []
     end
@@ -180,21 +184,19 @@ module ORM
     end
 
     def convert_to_instances(raw_records)
-      return join_result(raw_records) if has_join?
+      return handle_join_result(raw_records) if has_join?
 
       # 集約関数ならreturn
-      return raw_records.flatten.first if raw_records.flatten.size == 1 && aggregation_result?(raw_records.flatten)
+      return raw_records.flatten.first if aggregation_query?(raw_records)
 
-      raw_records.map { |raw_record|
-        build_instance_from_record(raw_record)
-      }
+      handle_normal_result(raw_records)
     end
 
     def has_join?
       !@query_state[:join_clause].empty?
     end
 
-    def join_result(raw_records)
+    def handle_join_result(raw_records)
       records = raw_records.map(&:dup).flatten
 
       klass_columns     = @klass.column_names
@@ -209,6 +211,16 @@ module ORM
       {
         @klass.name.downcase.to_sym => klass_instance,
         @associate_model.name.downcase.to_sym => associate_instance
+      }
+    end
+
+    def aggregation_query?(raw_records)
+      raw_records.flatten.size == 1 && aggregation_result?(raw_records.flatten)
+    end
+
+    def handle_normal_result(raw_records)
+      raw_records.map { |raw_record|
+        build_instance_from_record(raw_record)
       }
     end
 
