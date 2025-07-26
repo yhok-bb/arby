@@ -23,6 +23,20 @@ RSpec.describe ORM::QueryBuilder do
       expect(builder).to be_instance_of(ORM::QueryBuilder)
     end
   end
+
+  describe "#all" do
+    it "all method with lazy evaluation" do
+      users = User.all
+
+      expect(users.instance_variable_get(:@loaded)).to eq(false)
+
+      res = users.each { |user| user.name }
+      expect(users.instance_variable_get(:@loaded)).to eq(true)
+
+      expect(res.map(&:name)).to eq(["Alice", "Blice", "Clice", "Dlice", "Elice", "Flice"])
+    end
+  end
+
   describe "#to_a" do
     it "to_a method executes immediately" do
       users = User.where(age: 20..30)
