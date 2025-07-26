@@ -23,6 +23,10 @@ module ORM
       self.class.new(@klass)
     end
 
+    def to_a
+      self.class.new(@klass,  @query_state).execute
+    end
+
     def first
       new_query_state = @query_state.merge(limit_value: 1)
       self.class.new(@klass, new_query_state).execute.first

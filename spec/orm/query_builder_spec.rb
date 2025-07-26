@@ -23,6 +23,18 @@ RSpec.describe ORM::QueryBuilder do
       expect(builder).to be_instance_of(ORM::QueryBuilder)
     end
   end
+  describe "#to_a" do
+    it "to_a method executes immediately" do
+      users = User.where(age: 20..30)
+      expect(users.instance_variable_get(:@loaded)).to eq(false)
+
+      result = users.to_a
+      expect(result.size).to eq(4)
+      expect(result.map(&:name)).to eq(["Blice", "Clice", "Elice", "Flice"])
+      expect(users.instance_variable_get(:@loaded)).to eq(false) # to_aは即時実行なのでキャッシュしない
+    end
+  end
+
   describe "#first" do
     it "first method executes immediately" do
       users = User.where(age: 15..30)
