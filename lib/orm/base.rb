@@ -85,6 +85,10 @@ module ORM
       QueryBuilder.new(self).last
     end
 
+    def self.count
+      QueryBuilder.new(self).count
+    end
+
     def self.where(conditions)
       QueryBuilder.new(self).where(conditions)
     end

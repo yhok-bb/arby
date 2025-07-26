@@ -43,6 +43,12 @@ RSpec.describe ORM::QueryBuilder do
     end
   end
 
+  describe "#count" do
+    it "count method executes immediately" do
+      expect(User.count).to eq(6)
+    end
+  end
+
   describe "#where" do
     it "where user" do
       builder1 = User.where(name: "Alice")

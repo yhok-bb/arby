@@ -36,6 +36,13 @@ module ORM
       self.class.new(@klass, new_query_state).execute.last
     end
 
+    def count
+      new_query_state = @query_state.merge(
+        select_attributes: ["COUNT(*)"]
+      )
+      self.class.new(@klass, new_query_state).execute
+    end
+
     def where(attributes = {})
       new_query_state = @query_state.merge(
         conditions: @query_state[:conditions] + [attributes],
