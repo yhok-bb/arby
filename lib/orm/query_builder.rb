@@ -102,6 +102,7 @@ module ORM
     end
 
     def execute
+      puts "[SQL] #{to_sql} #{@query_state}"
       raw_records = klass.connection.execute(to_sql, @query_state[:bind_values])
       convert_to_instances(raw_records)
     end
@@ -110,6 +111,7 @@ module ORM
 
     def load_records
       @records = execute
+      puts "[CACHE] #{@records}"
       @loaded = true
     end
 
