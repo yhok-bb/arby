@@ -77,6 +77,14 @@ module ORM
       QueryBuilder.new(self).all
     end
 
+    def self.first
+      QueryBuilder.new(self).first
+    end
+
+    def self.last
+      QueryBuilder.new(self).last
+    end
+
     def self.where(conditions)
       QueryBuilder.new(self).where(conditions)
     end

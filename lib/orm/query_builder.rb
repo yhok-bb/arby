@@ -23,6 +23,19 @@ module ORM
       self.class.new(@klass)
     end
 
+    def first
+      new_query_state = @query_state.merge(limit_value: 1)
+      self.class.new(@klass, new_query_state).execute.first
+    end
+
+    def last
+      new_query_state = @query_state.merge(
+        order_clauses: [id: :desc],
+        limit_value: 1
+      )
+      self.class.new(@klass, new_query_state).execute.last
+    end
+
     def where(attributes = {})
       new_query_state = @query_state.merge(
         conditions: @query_state[:conditions] + [attributes],
