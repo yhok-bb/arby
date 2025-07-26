@@ -37,7 +37,17 @@ RSpec.describe ORM::QueryBuilder do
       users = User.where(age: 20..30) # SQLは実行しない
       expect(users.to_sql).to eq("SELECT * FROM users WHERE age BETWEEN ? and ?")
 
-      expect(users.first.name).to eq("Taro") # 遅延評価
+      # キャッシュ前
+      expect(users.instance_variable_get(:@loaded)).to eq(false)
+      expect(users.instance_variable_get(:@records)).to eq([])
+
+      user = users.first
+      expect(user.name).to eq("Taro") # 遅延評価
+
+      # キャッシュ後
+      expect(users.instance_variable_get(:@loaded)).to eq(true)
+      expect(users.instance_variable_get(:@records).size).to eq(1)
+      expect(users.instance_variable_get(:@records).first.name).to eq("Taro")
     end
   end
 

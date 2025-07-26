@@ -15,6 +15,8 @@ module ORM
         offset_value: nil,
         join_clause: [],
       }.merge(query_state)
+      @loaded = false
+      @records = []
     end
 
     def where(attributes = {})
@@ -67,7 +69,8 @@ module ORM
     end
 
     def each(&block)
-      execute.each(&block)
+      load_records unless @loaded
+      @records.each(&block)
     end
 
     def execute
@@ -76,6 +79,11 @@ module ORM
     end
 
     private
+
+    def load_records
+      @records = execute
+      @loaded = true
+    end
 
     def build_select_clause
       select = @query_state[:select_attributes].empty? ?  "*" : @query_state[:select_attributes].join(', ') 
