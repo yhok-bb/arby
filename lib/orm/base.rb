@@ -93,6 +93,14 @@ module ORM
       QueryBuilder.new(self).order(*attributes)
     end
 
+    def self.limit(num)
+      QueryBuilder.new(self).limit(num)
+    end
+
+    def self.offset(num)
+      QueryBuilder.new(self).offset(num)
+    end
+
     # instance methods
 
     def save
