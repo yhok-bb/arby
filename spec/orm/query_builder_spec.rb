@@ -8,6 +8,13 @@ RSpec.describe ORM::QueryBuilder do
     ORM::Base.establish_connection(database: ":memory:")
     User.create_table
     Post.create_table
+
+    User.create(name: "Alice", email: "alice@example.com", age: 15)
+    User.create(name: "Blice", email: "blice@example.com", age: 20)
+    User.create(name: "Clice", email: "clice@example.com", age: 25)
+    User.create(name: "Dlice", email: "dlice@example.com", age: 15)
+    User.create(name: "Elice", email: "elice@example.com", age: 20)
+    User.create(name: "Flice", email: "flice@example.com", age: 25)
   end
 
   describe "#initialize" do
@@ -19,21 +26,15 @@ RSpec.describe ORM::QueryBuilder do
 
   describe "#where" do
     it "where user" do
-      User.create(name: "Alice", email: "alice@example.com")
-      User.create(name: "Tom", email: "tom@example.com")
-      builder = ORM::QueryBuilder.new(User)
-      result = builder.where(name: "Alice").where(email: "alice@example.com")
+      builder1 = User.where(name: "Alice")
+      builder2 = builder1.where(email: "alice@example.com")
 
-      expect(result).to be_instance_of(ORM::QueryBuilder)
-      expect(builder).not_to equal(result)
-      expect(result.query_state[:conditions]).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
+      expect(builder2).to be_instance_of(ORM::QueryBuilder)
+      expect(builder1).not_to equal(builder2) # インスタンスが変更することをテスト
+      expect(builder2.query_state[:conditions]).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
     end
 
     it "when range specification" do
-      User.create(name: "Alice", age: 15)
-      User.create(name: "Taro", age: 25)
-      User.create(name: "Yoshida", age: 35)
-
       users = User.where(age: 20..30) # SQLは実行しない
       expect(users.to_sql).to eq("SELECT * FROM users WHERE age BETWEEN ? and ?")
 
@@ -42,97 +43,61 @@ RSpec.describe ORM::QueryBuilder do
       expect(users.instance_variable_get(:@records)).to eq([])
 
       user = users.first
-      expect(user.name).to eq("Taro") # 遅延評価
+      expect(user.name).to eq("Blice") # 遅延評価
 
       # キャッシュ後
       expect(users.instance_variable_get(:@loaded)).to eq(true)
-      expect(users.instance_variable_get(:@records).size).to eq(1)
-      expect(users.instance_variable_get(:@records).first.name).to eq("Taro")
+      expect(users.instance_variable_get(:@records).size).to eq(users.count)
+      expect(users.instance_variable_get(:@records).first.name).to eq("Blice")
     end
   end
 
   describe "#select" do
     it "when single select" do
-      User.create(name: "Alice", email: "alice@example.com", age: 15)
-      User.create(name: "Tom", email: "tom@example.com", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      result = builder.select(:name)
-
+      result = User.select(:name)
       expect(result.to_sql).to eq("SELECT name FROM users")
     end
     it "when multiple select" do
-      User.create(name: "Alice", email: "alice@example.com", age: 15)
-      User.create(name: "Tom", email: "tom@example.com", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      result = builder.select(:name, :email)
-
+      result = User.select(:name, :email)
       expect(result.to_sql).to eq("SELECT name, email FROM users")
     end
     it "when select and method chain" do
-      User.create(name: "Alice", email: "alice@example.com", age: 15)
-      User.create(name: "Tom", email: "tom@example.com", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      result = builder.select(:name, :email).where(name: "Alice")
-
+      result = User.select(:name, :email).where(name: "Alice")
       expect(result.to_sql).to eq("SELECT name, email FROM users WHERE name = ?")
     end
 
     it "returns count of records" do
-      User.create(name: "Alice")
-      User.create(name: "Bob")
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.select("COUNT(*)").execute
-      expect(res).to eq(2)
+      res = User.select("COUNT(*)").execute
+      expect(res).to eq(6)
     end
 
     it "returns name count of records" do
-      User.create(name: "Alice")
-      User.create(name: "Bob")
-      User.create(age: 15)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.select("COUNT(name)").execute
-      expect(res).to eq(2)
+      res = User.select("COUNT(name)").execute
+      expect(res).to eq(6)
     end
 
     it "returns sum age of records" do
-      User.create(name: "Alice")
-      User.create(age: 30)
-      User.create(age: 15)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.select("SUM(age)").execute
-      expect(res).to eq(45)
+      res = User.select("SUM(age)").execute
+      expect(res).to eq(120)
     end
 
     it "returns avg age of records" do
-      User.create(name: 25)
-      User.create(age: 30)
-      User.create(age: 15)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.select("AVG(age)").execute
-      expect(res).to eq(22.5)
+      res = User.select("AVG(age)").execute
+      expect(res).to eq(20.0)
     end
   end
 
    describe "#join" do
     it "joins with posts table" do
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.join(:posts).to_sql
+      res = User.join(:posts).to_sql
       expect(res).to eq("SELECT * FROM users INNER JOIN posts ON users.id = posts.user_id")
 
-      user = User.create(name: "Alice", age: 15)
-      Post.create(user_id: user.id, title: "Hello", detail: "nice to meet you")
+      Post.create(user_id: User.find(1).id, title: "Hello", detail: "nice to meet you")
       res = User.join(:posts).execute
 
       expect(res[:user].id).to eq(1)
       expect(res[:user].age).to eq(15)
-      expect(res[:user].email).to eq(nil)
+      expect(res[:user].email).to eq("alice@example.com")
       expect(res[:user].name).to eq("Alice")
       expect(res[:post].id).to eq(1)
       expect(res[:post].user_id).to eq(1)
@@ -141,8 +106,8 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "joins with where condition" do
-      user1 = User.create(name: "Alice", age: 25)
-      user2 = User.create(name: "Bob", age: 30)
+      user1 = User.find(1)
+      user2 = User.find(2)
       
       Post.create(user_id: user1.id, title: "Alice's Post", detail: "First post")
       Post.create(user_id: user2.id, title: "Bob's Post", detail: "Second post")
@@ -154,9 +119,9 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "joins with order and limit" do
-      user1 = User.create(name: "Alice", age: 25)
-      user2 = User.create(name: "Bob", age: 30)
-      user3 = User.create(name: "Charlie", age: 35)
+      user1 = User.find(1)
+      user2 = User.find(2)
+      user3 = User.find(3)
       
       Post.create(user_id: user1.id, title: "Post A", detail: "Detail A")
       Post.create(user_id: user2.id, title: "Post B", detail: "Detail B")
@@ -167,7 +132,7 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "returns correct instance types" do
-      user = User.create(name: "Alice", age: 25)
+      user = User.find(1)
       Post.create(user_id: user.id, title: "Test Post", detail: "Test Detail")
 
       res = User.join(:posts).execute
@@ -179,7 +144,7 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "handles join with select" do
-      user = User.create(name: "Alice", age: 25, email: "alice@example.com")
+      user = User.find(1)
       Post.create(user_id: user.id, title: "Selected Post", detail: "Selected Detail")
 
       sql = User.select(:name, :age).join(:posts).to_sql
@@ -187,8 +152,8 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "handles multiple users with posts correctly" do
-      user1 = User.create(name: "Alice", age: 25)
-      user2 = User.create(name: "Bob", age: 30)
+      user1 = User.find(1)
+      user2 = User.find(2)
       
       Post.create(user_id: user1.id, title: "Alice Post 1", detail: "Detail 1")
       Post.create(user_id: user1.id, title: "Alice Post 2", detail: "Detail 2")
@@ -206,41 +171,29 @@ RSpec.describe ORM::QueryBuilder do
 
   describe "#order" do
     it "returns age asc of records" do
-      User.create(age: 25)
-      User.create(age: 15)
-      User.create(age: 20)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.order(:age).execute
+      res = User.order(:age).execute
 
       expect(res[0].age).to eq(15)
-      expect(res[1].age).to eq(20)
-      expect(res[2].age).to eq(25)
+      expect(res[1].age).to eq(15)
+      expect(res[2].age).to eq(20)
+      expect(res[3].age).to eq(20)
+      expect(res[4].age).to eq(25)
+      expect(res[5].age).to eq(25)
     end
 
     it "returns age desc of records" do
-      User.create(age: 15)
-      User.create(age: 20)
-      User.create(age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.order(age: :desc).execute
+      res = User.order(age: :desc).execute
       
       expect(res[0].age).to eq(25)
-      expect(res[1].age).to eq(20)
-      expect(res[2].age).to eq(15)
+      expect(res[1].age).to eq(25)
+      expect(res[2].age).to eq(20)
+      expect(res[3].age).to eq(20)
+      expect(res[4].age).to eq(15)
+      expect(res[5].age).to eq(15)
     end
 
     it "returns age desc and name desc of records" do
-      User.create(name: "Alice", age: 15)
-      User.create(name: "Blice", age: 20)
-      User.create(name: "Clice", age: 25)
-      User.create(name: "Dlice", age: 15)
-      User.create(name: "Elice", age: 20)
-      User.create(name: "Flice", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.order(age: :desc, name: :desc).execute
+      res = User.order(age: :desc, name: :desc).execute
       
       expect(res[0].name).to eq("Flice")
       expect(res[1].name).to eq("Clice")
@@ -253,26 +206,13 @@ RSpec.describe ORM::QueryBuilder do
 
   describe "#limit, #offset" do
     it "returns limit users of records" do
-      User.create(name: "Alice", age: 15)
-      User.create(name: "Blice", age: 20)
-      User.create(name: "Clice", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.limit(2).execute
+      res = User.limit(2).execute
 
       expect(res.size).to eq(2)
     end
 
     it "returns offset users of records" do
-      User.create(name: "Alice", age: 15)
-      User.create(name: "Blice", age: 20)
-      User.create(name: "Clice", age: 25)
-      User.create(name: "Dlice", age: 15)
-      User.create(name: "Elice", age: 20)
-      User.create(name: "Flice", age: 25)
-
-      builder = ORM::QueryBuilder.new(User)
-      res = builder.limit(2).offset(2).execute
+      res = User.limit(2).offset(2).execute
 
       expect(res.size).to eq(2)
       expect(res.first.name).to eq("Clice")
@@ -282,28 +222,19 @@ RSpec.describe ORM::QueryBuilder do
 
   describe "#to_sql" do
     it "constructing a query string when conditions apply" do
-      User.create(name: "Alice", email: "alice@example.com")
-      User.create(name: "Tom", email: "tom@example.com")
-      builder = ORM::QueryBuilder.new(User)
-      result = builder.where(name: "Alice").where(email: "alice@example.com")
+      result = User.where(name: "Alice").where(email: "alice@example.com")
 
       expect(result.to_sql).to eq("SELECT * FROM users WHERE name = ? AND email = ?")
     end
 
     it "constructing a query string when conditions none" do
-      User.create(name: "Alice", email: "alice@example.com")
-      User.create(name: "Tom", email: "tom@example.com")
-      builder = ORM::QueryBuilder.new(User)
-      expect(builder.to_sql).to eq("SELECT * FROM users")
+      expect(User.all.to_sql).to eq("SELECT * FROM users")
     end
   end
 
   describe "#execute" do
     it "returns single records when multiple matches exist" do
-      User.create(name: "Alice", email: "alice@example.com")
-      User.create(name: "Tom", email: "tom@example.com")
-      builder = ORM::QueryBuilder.new(User)
-      results = builder.where(name: "Alice").execute
+      results = User.where(name: "Alice").execute
       
       expect(results).to be_an(Array)
       expect(results.size).to eq(1)
@@ -313,20 +244,14 @@ RSpec.describe ORM::QueryBuilder do
     end
 
     it "when sql injection query" do
-      User.create(name: "Alice", email: "alice@example.com")
-      User.create(name: "Tom", email: "tom@example.com")
-      builder = ORM::QueryBuilder.new(User)
-      results = builder.where(name: "' OR 1=1 --").where(age: 15).execute
+      results = User.where(name: "' OR 1=1 --").where(age: 15).execute
 
       expect(results).to be_an(Array)
       expect(results.size).to eq(0)
     end
 
     it "returns multiple records when multiple matches exist" do
-      User.create(name: "Alice", email: "alice1@example.com")
-      User.create(name: "Alice", email: "alice2@example.com")
-
-      results = ORM::QueryBuilder.new(User).where(name: "Alice").execute
+      results = User.where(age: 15).execute
       expect(results.size).to eq(2)
     end
 
