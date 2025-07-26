@@ -324,5 +324,17 @@ RSpec.describe ORM::QueryBuilder do
         ORM::QueryBuilder.new(User).execute
     }.to raise_error(SQLite3::Exception)
     end
+
+    it "raises error when offset is used without limit" do
+      expect {
+        User.offset(10).execute
+      }.to raise_error(ORM::QueryBuilder::InvalidQueryError, "OFFSET requires LIMIT")
+    end
+
+    it "allows offset when limit is present" do
+      expect {
+        User.limit(5).offset(10).execute
+      }.not_to raise_error
+    end
   end
 end

@@ -14,7 +14,7 @@ module ORM
         limit_value: nil,
         offset_value: nil,
         join_clause: [],
-      }.merge(query_state)
+    class InvalidQueryError < StandardError; end
       @loaded = false
       @records = []
     end
@@ -102,6 +102,7 @@ module ORM
     end
 
     def execute
+      validate_query_state!
       puts "[SQL] #{to_sql} #{@query_state}"
       raw_records = klass.connection.execute(to_sql, @query_state[:bind_values])
       convert_to_instances(raw_records)
@@ -220,6 +221,12 @@ module ORM
     def build_instance_from_record(raw_record)
       attributes = Hash[klass.column_names.zip(raw_record)]
       klass.new(attributes)
+    end
+
+    def validate_query_state!
+      if @query_state[:offset_value] && !@query_state[:limit_value]
+        raise InvalidQueryError, "OFFSET requires LIMIT"
+      end
     end
   end
 end
