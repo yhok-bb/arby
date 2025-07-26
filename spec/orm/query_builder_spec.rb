@@ -98,6 +98,20 @@ RSpec.describe ORM::QueryBuilder do
       # キャッシュ後
       expect(users.instance_variable_get(:@loaded)).to eq(true)
     end
+
+    it "verifying immutability" do
+      base = User.where(age: 15..40)
+      alice_users = base.where(name: "Alice")
+      blice_users = base.where(email: "blice@example.com")
+
+      expect(base.query_state[:conditions]).to eq([{:age=>15..40}])
+      expect(alice_users.query_state[:conditions]).to eq([{:age=>15..40}, {:name=>"Alice"}])
+      expect(blice_users.query_state[:conditions]).to eq([{:age=>15..40}, {:email=>"blice@example.com"}])
+
+      expect(base).not_to equal(alice_users)
+      expect(base).not_to equal(blice_users)
+      expect(alice_users).not_to equal(blice_users)
+    end
   end
 
   describe "#select" do
