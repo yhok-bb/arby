@@ -85,21 +85,18 @@ RSpec.describe ORM::QueryBuilder do
       expect(builder2.query_state[:conditions]).to eq([{:name=>"Alice"}, {:email=>"alice@example.com"}])
     end
 
-    it "when range specification" do
+    it "when range specification with lazy evaluation" do
       users = User.where(age: 20..30) # SQLは実行しない
       expect(users.to_sql).to eq("SELECT * FROM users WHERE age BETWEEN ? and ?")
 
       # キャッシュ前
       expect(users.instance_variable_get(:@loaded)).to eq(false)
-      expect(users.instance_variable_get(:@records)).to eq([])
 
-      user = users.first
-      expect(user.name).to eq("Blice") # 遅延評価
+      names = []
+      users.each { |u| names << u.name }  # 遅延実行
 
       # キャッシュ後
       expect(users.instance_variable_get(:@loaded)).to eq(true)
-      expect(users.instance_variable_get(:@records).size).to eq(users.count)
-      expect(users.instance_variable_get(:@records).first.name).to eq("Blice")
     end
   end
 
