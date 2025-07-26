@@ -19,6 +19,10 @@ module ORM
       @records = []
     end
 
+    def all
+      self.class.new(@klass)
+    end
+
     def where(attributes = {})
       new_query_state = @query_state.merge(
         conditions: @query_state[:conditions] + [attributes],
