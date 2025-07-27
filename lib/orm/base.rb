@@ -11,6 +11,7 @@ module ORM
           send("#{key}=", value)
         end
       end
+      @associations ||= {}
     end
 
     class RecordNotFound < StandardError; end
@@ -118,21 +119,29 @@ module ORM
     # association methods
     
     def self.belongs_to(association_name, options = {})
-      puts "belongs_to called with: #{association_name}"
       foreign_key = options[:foreign_key] || "#{association_name}_id"
 
-      attr_accessor foreign_key.to_sym
+      attr_reader foreign_key.to_sym
+      
+      define_method("#{foreign_key}=") do |value|
+        @associations ||= {}
+        @associations.delete(association_name)
+        instance_variable_set("@#{foreign_key}", value)
+      end
 
       define_method(association_name) do
-        foreign_key_value = send("#{foreign_key}")
+        return @associations[association_name] if @associations[association_name]
+
+        foreign_key_value = send(foreign_key)
         return nil unless foreign_key_value
 
         association_class_name = association_name.to_s.capitalize
         association_class = Object.const_get(association_class_name)
         record = association_class.find(foreign_key_value)
-
-        raise ORM::Base::RecordNotFound, "#{association_name.to_s} is not found" unless record
-        record
+        
+        raise ORM::Base::RecordNotFound, "#{association_name} is not found" unless record
+        
+        @associations[association_name] = record
       end
     end
 
@@ -171,7 +180,9 @@ module ORM
 
     def self.generate_attributes_accessors
       column_names.each do |cn|
-        attr_accessor cn.to_sym
+        unless method_defined?("#{cn}=")
+          attr_accessor cn.to_sym
+        end
       end
     end
 

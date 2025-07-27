@@ -187,9 +187,23 @@ RSpec.describe ORM::Base do
     end
 
     it "returns user when user is associated with the post" do
-      user = User.create
+      user = User.create(name: "test", email: "test@example.com")
       post = Post.new(user_id: user.id)
       expect(post.user.id).to eq(user.id)
+      expect(post.user.name).to eq(user.name)
+      expect(post.user.email).to eq(user.email)
+    end
+
+    it "returns user when overriding the user associated with the post" do
+      user = User.create(name: "test", email: "test@example.com")
+      post = Post.new(user_id: user.id)
+      expect(post.user.id).to eq(user.id)
+
+      user2 = User.create(name: "test2", email: "test2@example.com")
+      post.user_id = user2.id
+      expect(post.user.id).to eq(user2.id)
+      expect(post.user.name).to eq(user2.name)
+      expect(post.user.email).to eq(user2.email)
     end
 
     it "returns nil when no user is associated with the post" do
