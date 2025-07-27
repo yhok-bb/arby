@@ -13,6 +13,8 @@ module ORM
       end
     end
 
+    class RecordNotFound < StandardError; end
+
     # class methods
 
     def self.establish_connection(config)
@@ -111,6 +113,27 @@ module ORM
 
     def self.offset(num)
       QueryBuilder.new(self).offset(num)
+    end
+
+    # association methods
+    
+    def self.belongs_to(association_name, options = {})
+      puts "belongs_to called with: #{association_name}"
+      foreign_key = options[:foreign_key] || "#{association_name}_id"
+
+      attr_accessor foreign_key.to_sym
+
+      define_method(association_name) do
+        foreign_key_value = send("#{foreign_key}")
+        return nil unless foreign_key_value
+
+        association_class_name = association_name.to_s.capitalize
+        association_class = Object.const_get(association_class_name)
+        record = association_class.find(foreign_key_value)
+
+        raise ORM::Base::RecordNotFound, "#{association_name.to_s} is not found" unless record
+        record
+      end
     end
 
     # instance methods

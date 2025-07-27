@@ -218,4 +218,31 @@ RSpec.describe ORM::Base do
       expect(result).to be_instance_of(ORM::QueryBuilder)
     end
   end
+
+  # association
+  
+  describe ".belongs_to" do
+    it ".belongs_to" do
+      expect(Post.belongs_to(:user)).to eq(:user)
+    end
+
+    it "returns user when user is associated with the post" do
+      user = User.create
+      post = Post.new(user_id: user.id)
+      expect(post.user.id).to eq(user.id)
+    end
+
+    it "returns nil when no user is associated with the post" do
+      post = Post.new
+      expect(post.respond_to?(:user)).to eq(true)
+      expect(post.user).to eq(nil)
+    end
+
+    it "returns record not found when no user is found associated with the post" do
+      post = Post.new(user_id: 1)
+      expect {
+        post.user
+      }.to raise_error(ORM::Base::RecordNotFound, "user is not found")
+    end
+  end
 end
