@@ -278,4 +278,32 @@ RSpec.describe ORM::Base do
       expect(user.profile).to eq(nil)
     end
   end
+
+  describe ".has_many" do
+    it ".has_many" do
+      expect(User.has_many(:posts)).to eq(:posts)
+    end
+
+    it "returns multiple posts when a user has multiple posts" do
+      user = User.create(name: "test", email: "test@example.com")
+      expect(user.posts.to_a).to eq([])
+
+      post1 = Post.create(user_id: user.id, title: "posts1")
+      post2 = Post.create(user_id: user.id, title: "posts2")
+      post3 = Post.create(user_id: user.id, title: "posts3")
+
+      posts = user.posts.to_a
+
+      expect(posts.count).to eq(3)
+      expect(posts[0].title).to eq(post1.title)
+      expect(posts[1].title).to eq(post2.title)
+      expect(posts[2].title).to eq(post3.title)
+    end
+
+    it "returns empty array when user has no id" do
+      user = User.new(name: "test")
+      expect(user.id).to be_nil
+      expect(user.posts).to eq([])
+    end
+  end
 end

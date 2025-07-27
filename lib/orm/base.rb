@@ -168,6 +168,28 @@ module ORM
       end
     end
 
+    def self.has_many(association_name, options = {})
+      foreign_key = options[:foreign_key] || "#{self.name.downcase}_id"
+
+      define_method("#{association_name}=") do |value|
+        @associations ||= {}
+        @associations[association_name] = value
+      end
+
+      define_method(association_name) do
+        @associations ||= {}
+
+        return @associations[association_name] if @associations[association_name]
+        
+        return [] unless id
+
+        association_class_name = association_name.to_s.delete_suffix("s").capitalize
+        association_class = Object.const_get(association_class_name)
+        records = association_class.where(foreign_key => id)
+        @associations[association_name] = records
+      end
+    end
+
     # instance methods
 
     def save
