@@ -221,6 +221,7 @@ RSpec.describe ORM::Base do
       }.to raise_error(ORM::Base::RecordNotFound, "user is not found")
     end
   end
+
   describe ".has_one" do
     it ".has_one" do
       expect(User.has_one(:profile)).to eq(:profile)
@@ -235,6 +236,22 @@ RSpec.describe ORM::Base do
       expect(user.profile.bio).to eq(profile.bio)
     end
 
+    # TODO: Identity Map パターンが必要
+    # 異なるオブジェクトインスタンスが返されるため、外部でオブジェクトを更新しても
+    # アソシエーション経由では古いキャッシュが返される問題
+    xit "returns update profile when profile is associated with the user" do
+      user = User.create(name: "test", email: "test@example.com")
+      profile = Profile.create(user_id: user.id, nickname: "yhok", bio: "I'm yhok, Nice to meet you")
+      expect(user.profile.user_id).to eq(profile.user_id)
+      expect(user.profile.nickname).to eq(profile.nickname)
+      expect(user.profile.bio).to eq(profile.bio)
+
+      update_bio = "I'm yhok2, update profile recently"
+      profile.bio = update_bio
+      profile.save
+
+      expect(user.profile.bio).to eq(update_bio)
+    end
 
     it "returns profile when overriding the profile is associated with the user" do
       user = User.create(name: "test", email: "test@example.com")
