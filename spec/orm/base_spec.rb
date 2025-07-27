@@ -3,6 +3,7 @@ require_relative '../../lib/orm/base'
 require_relative '../../app/models/user'
 require_relative '../../app/models/post'
 require_relative '../../app/models/comment'
+require_relative '../../app/models/profile'
 require_relative '../../lib/orm/query_builder'
 
 RSpec.describe ORM::Base do
@@ -10,6 +11,7 @@ RSpec.describe ORM::Base do
     ORM::Base.establish_connection(database: ":memory:")
     User.create_table
     Post.create_table
+    Profile.create_table
   end
   
   describe "definition ORM::Base" do
@@ -217,6 +219,46 @@ RSpec.describe ORM::Base do
       expect {
         post.user
       }.to raise_error(ORM::Base::RecordNotFound, "user is not found")
+    end
+  end
+  describe ".has_one" do
+    it ".has_one" do
+      expect(User.has_one(:profile)).to eq(:profile)
+    end
+
+    it "returns profile when profile is associated with the user" do
+      user = User.create(name: "test", email: "test@example.com")
+      profile = Profile.create(user_id: user.id, nickname: "yhok", bio: "I'm yhok, Nice to meet you")
+
+      expect(user.profile.user_id).to eq(profile.user_id)
+      expect(user.profile.nickname).to eq(profile.nickname)
+      expect(user.profile.bio).to eq(profile.bio)
+    end
+
+
+    it "returns profile when overriding the profile is associated with the user" do
+      user = User.create(name: "test", email: "test@example.com")
+      profile = Profile.create(user_id: user.id, nickname: "yhok", bio: "I'm yhok, Nice to meet you")
+      expect(user.profile.user_id).to eq(profile.user_id)
+
+      profile2 = Profile.create(user_id: user.id, nickname: "yhok2", bio: "I'm yhok2, update profile recently")
+      user.profile = profile2
+
+      expect(user.profile.user_id).to eq(profile2.user_id)
+      expect(user.profile.nickname).to eq(profile2.nickname)
+      expect(user.profile.bio).to eq(profile2.bio)
+    end
+
+    it "returns nil when user has no id" do
+      user = User.new(name: "test")
+      expect(user.id).to be_nil
+      expect(user.profile).to eq(nil)
+    end
+
+    it "returns nil when no profile is associated with the user" do
+      user = User.new
+      expect(user.respond_to?(:profile)).to eq(true)
+      expect(user.profile).to eq(nil)
     end
   end
 end

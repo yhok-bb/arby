@@ -145,6 +145,29 @@ module ORM
       end
     end
 
+    def self.has_one(association_name, options = {})
+      foreign_key = options[:foreign_key] || "#{self.name.downcase}_id"
+
+      define_method("#{association_name}=") do |value|
+        @associations ||= {}
+        @associations[association_name] = value
+      end
+
+      define_method(association_name) do
+        @associations ||= {}
+
+        return @associations[association_name] if @associations[association_name]
+
+        return nil unless id
+
+        association_class_name = association_name.to_s.capitalize
+        association_class = Object.const_get(association_class_name)
+        record = association_class.where(foreign_key => id).first
+
+        @associations[association_name] = record
+      end
+    end
+
     # instance methods
 
     def save
