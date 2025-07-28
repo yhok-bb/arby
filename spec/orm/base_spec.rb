@@ -338,4 +338,18 @@ RSpec.describe ORM::Base do
       expect(User.just_adult.active.first.name).to eq("Elice")
     end
   end
+
+  describe ".validates" do
+    it ".validates" do
+      expect(User.class_variable_get(:@@validations)["User"]).to eq({:name=>{:presence=>true}})
+    end
+
+    it "#valid?" do
+      user = User.create(name: "Alice", active: 1, age: 10)
+      expect(user.valid?).to eq(true)
+
+      user2 = User.create(active: 1, age: 10)
+      expect(user2.valid?).to eq(false)
+    end
+  end
 end

@@ -4,6 +4,7 @@ require 'sqlite3'
 module ORM
   class Base
     @@connection = nil
+    @@validations = {}
 
     def initialize(attributes = {})
       attributes.each do |key, value|
@@ -199,6 +200,13 @@ module ORM
       end
     end
 
+    # validates methods
+
+    def self.validates(column, options = {})
+      @@validations[self.name] ||= {}
+      @@validations[self.name][column] = options
+    end
+
     # instance methods
 
     def save
@@ -228,6 +236,21 @@ module ORM
       self.class.connection.execute(sql, id)
       self.id = nil
       true
+    end
+
+    def valid?
+      validations = @@validations[self.class.to_s] || {}
+      return true if validations.empty?
+      
+      validations.all? do |column, options|
+        case 
+        when options[:presence]
+          value = self.send(column)
+          !(value.nil? || (value.respond_to?(:empty?) && value.empty?))
+        else
+          true
+        end
+      end
     end
 
     private

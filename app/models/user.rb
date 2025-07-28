@@ -6,6 +6,8 @@ class User < ORM::Base
 
   scope :active,     -> { where(active: 1) }
   scope :just_adult, -> { where(age: 20) }
+
+  validates :name, presence: true
   
   def self.columns_definition
     { name: 'TEXT', email: 'TEXT', age: 'INTEGER', active: 'INTEGER' }
