@@ -190,6 +190,15 @@ module ORM
       end
     end
 
+    # scope methods
+    
+    def self.scope(method_name, lambda_proc = nil, &block)
+      proc_to_use = lambda_proc || block
+      define_singleton_method(method_name) do |*args|
+        instance_exec(*args, &proc_to_use)
+      end
+    end
+
     # instance methods
 
     def save

@@ -49,7 +49,7 @@ RSpec.describe ORM::Base do
 
   describe ".column_names" do
     it "select column names" do
-      expect(User.column_names).to eq(["id", "name", "email", "age"])
+      expect(User.column_names).to eq(["id", "name", "email", "age", "active"])
     end
   end
 
@@ -306,4 +306,24 @@ RSpec.describe ORM::Base do
       expect(user.posts).to eq([])
     end
   end
+
+  describe ".scope" do
+    it ".scope" do
+      expect(User.respond_to?(:active)).to eq(true)
+      expect(User.active).to be_a(ORM::QueryBuilder)
+    end
+
+    it "returns active user" do
+      User.create(name: "Alice", active: 1, age: 10)
+      User.create(name: "Blice", active: 0, age: 12)
+      User.create(name: "Clice", active: 1, age: 15)
+      User.create(name: "Dlice", active: 0, age: 20)
+      User.create(name: "Elice", active: 1, age: 23)
+      User.create(name: "Flice", active: 1, age: 25)
+
+      expect(User.active.to_a.size).to eq(4)
+      expect(User.active.first.name).to eq("Alice")
+      expect(User.active.last.name).to eq("Flice")
+    end
+    end
 end
