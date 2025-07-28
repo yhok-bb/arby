@@ -23,6 +23,24 @@ module ORM
       @records = []
     end
 
+    def method_missing(method_name, *args, &block)
+      if @klass.respond_to?(method_name)
+        result = @klass.send(method_name, *args, &block)
+        if result.is_a?(QueryBuilder)
+          # 既存のクエリ状態と新しいクエリ状態をマージ
+          merge_query_states(result)
+        else
+          result
+        end
+      else
+        super
+      end
+    end
+    
+    def respond_to_missing?(method_name, include_private = false)
+      @klass.respond_to?(method_name, include_private) || super
+    end
+
     def all
       self.class.new(@klass)
     end
@@ -113,6 +131,17 @@ module ORM
     end
 
     private
+    
+    def merge_query_states(other_query_builder)
+      new_state = @query_state.dup
+      other_state = other_query_builder.query_state
+      
+      # 条件とバインド値をマージ
+      new_state[:conditions] += other_state[:conditions]
+      new_state[:bind_values] += other_state[:bind_values]
+      
+      QueryBuilder.new(@klass, new_state)
+    end
 
     def load_records
       @records = execute

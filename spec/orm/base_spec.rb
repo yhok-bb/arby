@@ -325,5 +325,17 @@ RSpec.describe ORM::Base do
       expect(User.active.first.name).to eq("Alice")
       expect(User.active.last.name).to eq("Flice")
     end
+
+    it "returns just_adult and active user" do
+      User.create(name: "Alice", active: 1, age: 10)
+      User.create(name: "Blice", active: 0, age: 12)
+      User.create(name: "Clice", active: 1, age: 15)
+      User.create(name: "Dlice", active: 0, age: 20)
+      User.create(name: "Elice", active: 1, age: 20)
+      User.create(name: "Flice", active: 1, age: 25)
+
+      expect(User.just_adult.active.to_a.size).to eq(1)
+      expect(User.just_adult.active.first.name).to eq("Elice")
     end
+  end
 end
