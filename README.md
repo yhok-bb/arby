@@ -1,4 +1,4 @@
-# Ruby ORM Framework
+# Custom Ruby ORM mapper
 
 A custom Object-Relational Mapping (ORM) framework built from scratch in Ruby, inspired by Active Record. This educational project demonstrates advanced Ruby programming concepts including metaprogramming, design patterns, and database integration.
 
